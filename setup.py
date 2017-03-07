@@ -34,7 +34,7 @@ version = __import__('django').get_version()
 
 setup(
     name='Django',
-    version="1.8.4-post2",
+    version="1.8.4-post3",
     url='http://www.djangoproject.com/',
     author='Django Software Foundation',
     author_email='foundation@djangoproject.com',

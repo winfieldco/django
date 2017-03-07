@@ -15,7 +15,7 @@ from django.db.transaction import TransactionManagementError
 from django.db.utils import DatabaseError
 from django.utils.deprecation import RemovedInDjango110Warning
 from django.utils.six.moves import zip
-
+import logging
 
 class SQLCompiler(object):
     def __init__(self, query, connection, using):
@@ -747,7 +747,9 @@ class SQLCompiler(object):
             fields_not_found = set(requested.keys()).difference(fields_found)
             if fields_not_found:
                 invalid_fields = ("'%s'" % s for s in fields_not_found)
-                raise FieldError(
+
+                # Silently fail, no need to error out
+                logging.warn(
                     'Invalid field name(s) given in select_related: %s. '
                     'Choices are: %s' % (
                         ', '.join(invalid_fields),
