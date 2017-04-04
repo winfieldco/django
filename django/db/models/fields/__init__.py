@@ -30,6 +30,7 @@ from django.utils.encoding import (smart_text, force_text, force_bytes,
 from django.utils.ipv6 import clean_ipv6_address
 from django.utils import six
 from django.utils.itercompat import is_iterable
+import fnmatch
 
 # When the _meta object was formalized, this exception was moved to
 # django.core.exceptions. It is retained here for backwards compatibility
