@@ -204,6 +204,7 @@ class Field(RegisterLookupMixin):
         errors.extend(self._check_choices())
         errors.extend(self._check_db_index())
         errors.extend(self._check_null_allowed_for_primary_keys())
+        errors.extend(self._check_null_allowed())        
         errors.extend(self._check_backend_specific_checks(**kwargs))
         errors.extend(self._check_deprecation_details())
         return errors
@@ -283,6 +284,38 @@ class Field(RegisterLookupMixin):
             ]
         else:
             return []
+
+    def _check_null_allowed(self):
+        # We want to basically disable the not null for almost all fields except
+        # where is absolutely neccessary, this will allow us to save models 
+        # and check required fields at the python level.
+        has_default = self.has_default()
+        try:
+          if self.auto_now == True:
+            has_default = True
+        except AttributeError:
+          pass
+        try:
+          if self.auto_now_add == True:
+            has_default = True
+        except AttributeError:
+          pass
+
+        for pattern in settings.MODEL_FIELD_IGNORE_NULL_ALLOWED:
+          if fnmatch(str(self), pattern):
+            return []
+
+        if self.primary_key != True and self.unique != True and self.__class__.__name__ not in ['SlugField', 'PermalinkField', 'BooleanField', 'OneToOneField', 'ManyToManyField'] and has_default == False:
+          if self.null == False:
+            return [
+                checks.Error(
+                    'This field must have null=True. It will still be required at the admin level if you omit blank=True.',
+                    hint=('Set null=True on the field.'),
+                    obj=self,
+                    id='fields.E008',
+                )
+            ]
+        return []
 
     def _check_null_allowed_for_primary_keys(self):
         if (self.primary_key and self.null and
