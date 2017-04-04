@@ -301,7 +301,7 @@ class Field(RegisterLookupMixin):
         except AttributeError:
           pass
 
-        for pattern in settings.MODEL_FIELD_IGNORE_NULL_ALLOWED:
+        for pattern in settings.MODEL_FIELD_ALLOW_NOT_NULL:
           if fnmatch(str(self), pattern):
             return []
 
