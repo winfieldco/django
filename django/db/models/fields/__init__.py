@@ -305,7 +305,7 @@ class Field(RegisterLookupMixin):
           if fnmatch(str(self), pattern):
             return []
 
-        if self.primary_key != True and self.unique != True and self.__class__.__name__ not in ['SlugField', 'PermalinkField', 'BooleanField', 'OneToOneField', 'ManyToManyField'] and has_default == False:
+        if self.primary_key != True and self.unique != True and self.__class__.__name__ not in ['OneToOneField', 'ManyToManyField'] and has_default == False:
           if self.null == False:
             return [
                 checks.Error(
