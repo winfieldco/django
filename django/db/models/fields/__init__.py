@@ -141,7 +141,7 @@ class Field(RegisterLookupMixin):
             serialize=True, unique_for_date=None, unique_for_month=None,
             unique_for_year=None, choices=None, help_text='', db_column=None,
             db_tablespace=None, auto_created=False, validators=[],
-            error_messages=None):
+            error_messages=None, invalid_default=None):
         self.name = name
         self.verbose_name = verbose_name  # May be set by set_attributes_from_name
         self._verbose_name = verbose_name  # Store original for deconstruction
@@ -161,6 +161,7 @@ class Field(RegisterLookupMixin):
         self.db_column = db_column
         self.db_tablespace = db_tablespace or settings.DEFAULT_INDEX_TABLESPACE
         self.auto_created = auto_created
+        self.invalid_default = invalid_default
 
         # Set db_index to True if the field has a relationship and doesn't
         # explicitly set db_index.
@@ -204,8 +205,7 @@ class Field(RegisterLookupMixin):
         errors.extend(self._check_field_name())
         errors.extend(self._check_choices())
         errors.extend(self._check_db_index())
-        errors.extend(self._check_null_allowed_for_primary_keys())
-        errors.extend(self._check_null_allowed())        
+        errors.extend(self._check_null_allowed_for_primary_keys())     
         errors.extend(self._check_backend_specific_checks(**kwargs))
         errors.extend(self._check_deprecation_details())
         return errors
@@ -285,38 +285,6 @@ class Field(RegisterLookupMixin):
             ]
         else:
             return []
-
-    def _check_null_allowed(self):
-        # We want to basically disable the not null for almost all fields except
-        # where is absolutely neccessary, this will allow us to save models 
-        # and check required fields at the python level.
-        has_default = self.has_default()
-        try:
-          if self.auto_now == True:
-            has_default = True
-        except AttributeError:
-          pass
-        try:
-          if self.auto_now_add == True:
-            has_default = True
-        except AttributeError:
-          pass
-
-        for pattern in settings.MODEL_FIELD_ALLOW_NOT_NULL:
-          if fnmatch(str(self), pattern):
-            return []
-
-        if self.primary_key != True and self.unique != True and self.__class__.__name__ not in ['OneToOneField', 'ManyToManyField'] and has_default == False:
-          if self.null == False:
-            return [
-                checks.Error(
-                    'This field must have null=True. It will still be required at the admin level if you omit blank=True.',
-                    hint=('Set null=True on the field.'),
-                    obj=self,
-                    id='fields.E008',
-                )
-            ]
-        return []
 
     def _check_null_allowed_for_primary_keys(self):
         if (self.primary_key and self.null and
@@ -439,6 +407,7 @@ class Field(RegisterLookupMixin):
             "auto_created": False,
             "validators": [],
             "error_messages": None,
+            "invalid_default": None,            
         }
         attr_overrides = {
             "unique": "_unique",
