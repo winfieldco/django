@@ -36,6 +36,7 @@ from fnmatch import fnmatch
 # django.core.exceptions. It is retained here for backwards compatibility
 # purposes.
 from django.core.exceptions import FieldDoesNotExist  # NOQA
+from __builtin__ import True
 
 # Avoid "TypeError: Item in ``from list'' not a string" -- unicode_literals
 # makes these strings unicode
@@ -141,7 +142,7 @@ class Field(RegisterLookupMixin):
             serialize=True, unique_for_date=None, unique_for_month=None,
             unique_for_year=None, choices=None, help_text='', db_column=None,
             db_tablespace=None, auto_created=False, validators=[],
-            error_messages=None, invalid_default=None):
+            error_messages=None, required=None):
         self.name = name
         self.verbose_name = verbose_name  # May be set by set_attributes_from_name
         self._verbose_name = verbose_name  # Store original for deconstruction
@@ -161,7 +162,26 @@ class Field(RegisterLookupMixin):
         self.db_column = db_column
         self.db_tablespace = db_tablespace or settings.DEFAULT_INDEX_TABLESPACE
         self.auto_created = auto_created
-        self.invalid_default = invalid_default
+        self.required = required
+
+        # All fields are nullable.
+        if self.required != None:
+
+            if self.required:
+                self.null = True
+                self.blank = False
+            else:
+                self.null = True
+                self.blank = True
+
+            # ManyToMany and Boolean do not allow null.
+            if self.__class__.__name__ in ['ManyToManyField', 'BooleanField']:
+                self.null = False
+
+            # DateTimeField, TimeField etc. with auto_now automatically set blank to True
+            # it will throw an error if we don't allow this.
+            if blank == True:
+                self.blank = True
 
         # Set db_index to True if the field has a relationship and doesn't
         # explicitly set db_index.
@@ -205,7 +225,8 @@ class Field(RegisterLookupMixin):
         errors.extend(self._check_field_name())
         errors.extend(self._check_choices())
         errors.extend(self._check_db_index())
-        errors.extend(self._check_null_allowed_for_primary_keys())     
+        errors.extend(self._check_null_allowed_for_primary_keys())
+        errors.extend(self._check_custom())
         errors.extend(self._check_backend_specific_checks(**kwargs))
         errors.extend(self._check_deprecation_details())
         return errors
@@ -285,6 +306,11 @@ class Field(RegisterLookupMixin):
             ]
         else:
             return []
+
+    def _check_custom(self):
+      if hasattr(settings, 'MODEL_FIELD_CHECK'):
+        return settings.MODEL_FIELD_CHECK(self)
+      return []
 
     def _check_null_allowed_for_primary_keys(self):
         if (self.primary_key and self.null and
@@ -407,7 +433,7 @@ class Field(RegisterLookupMixin):
             "auto_created": False,
             "validators": [],
             "error_messages": None,
-            "invalid_default": None,            
+            "required": None,
         }
         attr_overrides = {
             "unique": "_unique",
