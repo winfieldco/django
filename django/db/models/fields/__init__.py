@@ -36,7 +36,6 @@ from fnmatch import fnmatch
 # django.core.exceptions. It is retained here for backwards compatibility
 # purposes.
 from django.core.exceptions import FieldDoesNotExist  # NOQA
-from __builtin__ import True
 
 # Avoid "TypeError: Item in ``from list'' not a string" -- unicode_literals
 # makes these strings unicode
@@ -142,7 +141,7 @@ class Field(RegisterLookupMixin):
             serialize=True, unique_for_date=None, unique_for_month=None,
             unique_for_year=None, choices=None, help_text='', db_column=None,
             db_tablespace=None, auto_created=False, validators=[],
-            error_messages=None, required=None):
+            error_messages=None, required=None, auto_set=False):
         self.name = name
         self.verbose_name = verbose_name  # May be set by set_attributes_from_name
         self._verbose_name = verbose_name  # Store original for deconstruction
@@ -163,6 +162,7 @@ class Field(RegisterLookupMixin):
         self.db_tablespace = db_tablespace or settings.DEFAULT_INDEX_TABLESPACE
         self.auto_created = auto_created
         self.required = required
+        self.auto_set = auto_set
 
         # All fields are nullable.
         if self.required != None:
@@ -434,6 +434,7 @@ class Field(RegisterLookupMixin):
             "validators": [],
             "error_messages": None,
             "required": None,
+            'auto_set': False,
         }
         attr_overrides = {
             "unique": "_unique",
