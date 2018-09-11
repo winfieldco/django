@@ -15,7 +15,7 @@ from django.db.transaction import TransactionManagementError
 from django.db.utils import DatabaseError
 from django.utils.deprecation import RemovedInDjango110Warning
 from django.utils.six.moves import zip
-
+import logging
 
 class SQLCompiler(object):
     def __init__(self, query, connection, using):
