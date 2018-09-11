@@ -191,7 +191,9 @@ class GenericForeignKey(object):
 
     def get_prefetch_queryset(self, instances, queryset=None):
         if queryset is not None:
-            raise ValueError("Custom queryset can't be used for this lookup.")
+            # Allow queryset if its a method
+            if callable(queryset) == False:            
+                raise ValueError("Custom queryset can't be used for this lookup.")
 
         # For efficiency, group the instances by content type and then do one
         # query per model
@@ -212,7 +214,12 @@ class GenericForeignKey(object):
         for ct_id, fkeys in fk_dict.items():
             instance = instance_dict[ct_id]
             ct = self.get_content_type(id=ct_id, using=instance._state.db)
-            ret_val.extend(ct.get_all_objects_for_this_type(pk__in=fkeys))
+            ct_queryset = ct.get_all_objects_for_this_type(pk__in=fkeys)
+            if queryset:
+                # Queryset in our case is a method, we pass in the queryset, it can then be modified
+                ct_queryset = queryset(ct_queryset)            
+            ret_val.extend(ct_queryset)
+
 
         # For doing the join in Python, we have to match both the FK val and the
         # content type, so we use a callable that returns a (fk, class) pair.

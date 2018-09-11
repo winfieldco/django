@@ -755,7 +755,9 @@ class SQLCompiler(object):
             fields_not_found = set(requested.keys()).difference(fields_found)
             if fields_not_found:
                 invalid_fields = ("'%s'" % s for s in fields_not_found)
-                raise FieldError(
+                
+                # Silently fail, no need to error out
+                logging.warn(
                     'Invalid field name(s) given in select_related: %s. '
                     'Choices are: %s' % (
                         ', '.join(invalid_fields),
